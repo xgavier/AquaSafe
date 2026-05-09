@@ -173,7 +173,7 @@ app.put('/api/tanks/:tankId', async (request, response, next) => {
     const tankId = toPositiveInteger(request.params.tankId)
 
     if (!tankId) {
-      response.status(400).json({ error: 'El identificador del tinaco no es valido.' })
+      response.status(400).json({ error: 'El identificador de la cisterna no es valido.' })
       return
     }
 
@@ -239,7 +239,7 @@ app.put('/api/tanks/:tankId', async (request, response, next) => {
     })
 
     if (!tank) {
-      response.status(404).json({ error: 'Tinaco no encontrado.' })
+      response.status(404).json({ error: 'Cisterna no encontrada.' })
       return
     }
 
@@ -254,7 +254,7 @@ app.delete('/api/tanks/:tankId', async (request, response, next) => {
     const tankId = toPositiveInteger(request.params.tankId)
 
     if (!tankId) {
-      response.status(400).json({ error: 'El identificador del tinaco no es valido.' })
+      response.status(400).json({ error: 'El identificador de la cisterna no es valido.' })
       return
     }
 
@@ -262,7 +262,7 @@ app.delete('/api/tanks/:tankId', async (request, response, next) => {
     const deleted = await deleteTank(pool, tankId)
 
     if (!deleted) {
-      response.status(404).json({ error: 'Tinaco no encontrado.' })
+      response.status(404).json({ error: 'Cisterna no encontrada.' })
       return
     }
 

@@ -33,8 +33,8 @@ export const ALERTS_SEEN_STORAGE_KEY = 'aquasafe-seen-alert-marker'
 
 export const navigation: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'tinacos', label: 'Tinacos', icon: Building2 },
-  { id: 'agregar-tinaco', label: 'Agregar tinaco', icon: PlusCircle },
+  { id: 'tinacos', label: 'Cisternas', icon: Building2 },
+  { id: 'agregar-tinaco', label: 'Agregar cisterna', icon: PlusCircle },
   { id: 'alertas', label: 'Alertas', icon: Bell },
   { id: 'control', label: 'Control', icon: SlidersHorizontal },
   { id: 'reportes', label: 'Reportes', icon: FileText },
@@ -85,7 +85,7 @@ export const fallbackMetrics: DashboardMetric[] = [
 
 export const fallbackTanks: Tank[] = [
   {
-    name: 'Tinaco Norte',
+    name: 'Cisterna Norte',
     location: 'Planta alta',
     level: 82,
     capacity: '1,100 L',
@@ -118,7 +118,7 @@ export const fallbackAlerts: AlertItem[] = [
     severity: 'warning',
   },
   {
-    title: 'Tinaco Norte recuperado',
+    title: 'Cisterna Norte recuperada',
     detail: 'Nivel normalizado despues del ciclo de bomba.',
     time: 'Hace 24 min',
     severity: 'ok',

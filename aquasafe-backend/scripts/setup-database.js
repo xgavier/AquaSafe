@@ -169,7 +169,7 @@ const seedData = async (pool) => {
         Status
       )
       VALUES
-        (N'AQS-00001', N'Tinaco Norte', N'Planta alta', 1100, 35, 31, N'Operativo'),
+        (N'AQS-00001', N'Cisterna Norte', N'Planta alta', 1100, 35, 31, N'Operativo'),
         (N'AQS-00002', N'Deposito Central', N'Patio tecnico', 2500, 35, 31, N'Llenado parcial'),
         (N'AQS-00003', N'Reserva Sur', N'Area de servicio', 900, 35, 31, N'Revisar consumo');
     END;
@@ -194,18 +194,18 @@ const seedData = async (pool) => {
       WITH SampleReadings AS (
         SELECT *
         FROM (VALUES
-          (N'Tinaco Norte', 11, 68.0, 24.0, 4.8, 116.0),
-          (N'Tinaco Norte', 10, 70.0, 24.1, 4.3, 108.0),
-          (N'Tinaco Norte', 9, 73.0, 24.1, 5.1, 124.0),
-          (N'Tinaco Norte', 8, 75.0, 24.3, 5.6, 138.0),
-          (N'Tinaco Norte', 7, 78.0, 24.5, 6.1, 154.0),
-          (N'Tinaco Norte', 6, 81.0, 24.8, 5.8, 146.0),
-          (N'Tinaco Norte', 5, 83.0, 24.7, 6.3, 160.0),
-          (N'Tinaco Norte', 4, 84.0, 24.9, 5.2, 132.0),
-          (N'Tinaco Norte', 3, 82.0, 24.8, 4.8, 120.0),
-          (N'Tinaco Norte', 2, 82.0, 24.8, 4.4, 112.0),
-          (N'Tinaco Norte', 1, 82.0, 24.8, 4.1, 104.0),
-          (N'Tinaco Norte', 0, 82.0, 24.8, 4.0, 102.0),
+          (N'Cisterna Norte', 11, 68.0, 24.0, 4.8, 116.0),
+          (N'Cisterna Norte', 10, 70.0, 24.1, 4.3, 108.0),
+          (N'Cisterna Norte', 9, 73.0, 24.1, 5.1, 124.0),
+          (N'Cisterna Norte', 8, 75.0, 24.3, 5.6, 138.0),
+          (N'Cisterna Norte', 7, 78.0, 24.5, 6.1, 154.0),
+          (N'Cisterna Norte', 6, 81.0, 24.8, 5.8, 146.0),
+          (N'Cisterna Norte', 5, 83.0, 24.7, 6.3, 160.0),
+          (N'Cisterna Norte', 4, 84.0, 24.9, 5.2, 132.0),
+          (N'Cisterna Norte', 3, 82.0, 24.8, 4.8, 120.0),
+          (N'Cisterna Norte', 2, 82.0, 24.8, 4.4, 112.0),
+          (N'Cisterna Norte', 1, 82.0, 24.8, 4.1, 104.0),
+          (N'Cisterna Norte', 0, 82.0, 24.8, 4.0, 102.0),
 
           (N'Deposito Central', 11, 58.0, 24.7, 3.8, 94.0),
           (N'Deposito Central', 10, 60.0, 24.8, 4.1, 102.0),
@@ -288,13 +288,13 @@ const seedData = async (pool) => {
         t.TankId,
         N'nivel_normal',
         N'ok',
-        N'Tinaco Norte recuperado',
+        N'Cisterna Norte recuperada',
         N'Nivel normalizado despues del ciclo de bomba.',
         N'resolved',
         DATEADD(minute, -24, SYSUTCDATETIME()),
         DATEADD(minute, -18, SYSUTCDATETIME())
       FROM dbo.Tanks AS t
-      WHERE t.Name = N'Tinaco Norte'
+      WHERE t.Name = N'Cisterna Norte'
       UNION ALL
       SELECT
         t.TankId,
@@ -401,7 +401,7 @@ const run = async () => {
     console.log('Insertando datos semilla si hacen falta...')
     await seedData(pool)
 
-    console.log('Verificando identificadores unicos de tinacos...')
+    console.log('Verificando identificadores unicos de cisternas...')
     await ensureTankIdentifiers(pool)
 
     console.log('Resumen de datos:')

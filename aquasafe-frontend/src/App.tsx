@@ -251,7 +251,7 @@ function App() {
     event.preventDefault()
     setAddTankStatus({
       type: 'saving',
-      message: 'Guardando tinaco en SQL Server...',
+      message: 'Guardando cisterna en SQL Server...',
     })
 
     try {
@@ -279,7 +279,7 @@ function App() {
         throw new Error(
           errorBody?.errors?.join(' ') ??
             errorBody?.error ??
-            'No se pudo crear el tinaco.',
+            'No se pudo crear la cisterna.',
         )
       }
 
@@ -287,7 +287,7 @@ function App() {
       setTankForm(initialTankForm)
       setAddTankStatus({
         type: 'success',
-        message: 'Tinaco agregado correctamente.',
+        message: 'Cisterna agregada correctamente.',
       })
       setActiveSection('tinacos')
       window.requestAnimationFrame(() => {
@@ -303,7 +303,7 @@ function App() {
         message:
           error instanceof Error
             ? error.message
-            : 'No se pudo crear el tinaco.',
+            : 'No se pudo crear la cisterna.',
       })
     }
   }
@@ -314,14 +314,14 @@ function App() {
     if (!editingTank?.id) {
       setEditTankStatus({
         type: 'error',
-        message: 'No se encontro el tinaco seleccionado.',
+        message: 'No se encontro la cisterna seleccionada.',
       })
       return
     }
 
     setEditTankStatus({
       type: 'saving',
-      message: 'Actualizando tinaco en SQL Server...',
+      message: 'Actualizando cisterna en SQL Server...',
     })
 
     try {
@@ -349,14 +349,14 @@ function App() {
         throw new Error(
           errorBody?.errors?.join(' ') ??
             errorBody?.error ??
-            'No se pudo actualizar el tinaco.',
+            'No se pudo actualizar la cisterna.',
         )
       }
 
       await refreshDashboardAndAlerts()
       setEditTankStatus({
         type: 'success',
-        message: 'Tinaco actualizado correctamente.',
+        message: 'Cisterna actualizada correctamente.',
       })
       closeEditTank()
     } catch (error) {
@@ -366,7 +366,7 @@ function App() {
         message:
           error instanceof Error
             ? error.message
-            : 'No se pudo actualizar el tinaco.',
+            : 'No se pudo actualizar la cisterna.',
       })
     }
   }
@@ -377,7 +377,7 @@ function App() {
     }
 
     const shouldDelete = window.confirm(
-      `Quieres eliminar el tinaco "${tank.name}"? Esta accion tambien eliminara sus lecturas y sensores asociados.`,
+      `Quieres eliminar la cisterna "${tank.name}"? Esta accion tambien eliminara sus lecturas y sensores asociados.`,
     )
 
     if (!shouldDelete) {
@@ -393,7 +393,7 @@ function App() {
         const errorBody = (await response.json().catch(() => null)) as
           | { error?: string }
           | null
-        throw new Error(errorBody?.error ?? 'No se pudo eliminar el tinaco.')
+        throw new Error(errorBody?.error ?? 'No se pudo eliminar la cisterna.')
       }
 
       if (editingTank?.id === tank.id) {
@@ -407,7 +407,7 @@ function App() {
       setEditTankStatus({
         type: 'error',
         message:
-          error instanceof Error ? error.message : 'No se pudo eliminar el tinaco.',
+          error instanceof Error ? error.message : 'No se pudo eliminar la cisterna.',
       })
     }
   }

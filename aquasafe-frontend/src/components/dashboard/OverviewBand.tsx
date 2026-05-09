@@ -14,7 +14,7 @@ export function OverviewBand({ apiStatus, overview }: OverviewBandProps) {
         <h2>Operacion hidrica bajo control</h2>
         <p>
           {apiStatus === 'online'
-            ? 'Lecturas conectadas a SQL Server para presentar nivel, temperatura, consumo y riesgo.'
+            ? 'Lecturas para presentar nivel, temperatura, consumo y riesgo.'
             : 'Mostrando datos locales mientras se establece conexion con la API de AquaSafe.'}
         </p>
       </div>

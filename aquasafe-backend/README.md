@@ -36,12 +36,12 @@ curl -X PATCH http://127.0.0.1:4000/api/controls/pump \
   -d "{\"enabled\":true}"
 ```
 
-Ejemplo para crear un tinaco:
+Ejemplo para crear una cisterna:
 
 ```bash
 curl -X POST http://127.0.0.1:4000/api/tanks \
   -H "Content-Type: application/json" \
-  -d "{\"name\":\"Tinaco nuevo\",\"location\":\"Azotea\",\"capacityLiters\":1100,\"initialLevelPercent\":50,\"initialTemperatureC\":24,\"minLevelPercent\":35,\"maxTemperatureC\":31,\"status\":\"Operativo\"}"
+  -d "{\"name\":\"Cisterna nueva\",\"location\":\"Azotea\",\"capacityLiters\":1100,\"initialLevelPercent\":50,\"initialTemperatureC\":24,\"minLevelPercent\":35,\"maxTemperatureC\":31,\"status\":\"Operativo\"}"
 ```
 
 ## Tablas

@@ -282,7 +282,7 @@ export const createTank = async (pool, tankInput) => {
         N'bajo_nivel',
         N'critical',
         CONCAT(N'Nivel bajo: ', @name),
-        CONCAT(N'El tinaco ', @name, N' esta en ', FORMAT(@initialLevelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
+        CONCAT(N'La cisterna ', @name, N' esta en ', FORMAT(@initialLevelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
         N'open',
         SYSUTCDATETIME()
       );
@@ -377,8 +377,8 @@ export const updateTank = async (pool, tankId, tankInput) => {
 
         SET @AlertDetail = CASE
           WHEN @status = N'Revisar consumo'
-            THEN CONCAT(N'El tinaco ', @name, N' paso de Operativo a Revisar consumo. Revisa posible consumo anormal o fuga.')
-          ELSE CONCAT(N'El tinaco ', @name, N' paso de Operativo a Mantenimiento. Se requiere seguimiento operativo.')
+            THEN CONCAT(N'La cisterna ', @name, N' paso de Operativo a Revisar consumo. Revisa posible consumo anormal o fuga.')
+          ELSE CONCAT(N'La cisterna ', @name, N' paso de Operativo a Mantenimiento. Se requiere seguimiento operativo.')
         END;
 
         INSERT INTO dbo.Alerts (
@@ -424,7 +424,7 @@ export const updateTank = async (pool, tankId, tankInput) => {
           N'bajo_nivel',
           N'critical',
           CONCAT(N'Nivel bajo: ', @name),
-          CONCAT(N'El tinaco ', @name, N' esta en ', FORMAT(@levelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
+          CONCAT(N'La cisterna ', @name, N' esta en ', FORMAT(@levelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
           N'open',
           SYSUTCDATETIME()
         );

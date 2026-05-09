@@ -17,7 +17,7 @@ export function AddTankView({ form, status, onChange, onSubmit }: AddTankViewPro
       <div className="section-heading">
         <div>
           <span className="eyebrow">Nuevo deposito</span>
-          <h2>Agregar tinaco</h2>
+          <h2>Agregar cisterna</h2>
         </div>
         <PlusCircle size={22} />
       </div>
@@ -38,7 +38,7 @@ export function AddTankView({ form, status, onChange, onSubmit }: AddTankViewPro
             disabled={status.type === 'saving'}
           >
             <Save size={18} />
-            {status.type === 'saving' ? 'Guardando' : 'Guardar tinaco'}
+            {status.type === 'saving' ? 'Guardando' : 'Guardar cisterna'}
           </button>
         </div>
       </form>
