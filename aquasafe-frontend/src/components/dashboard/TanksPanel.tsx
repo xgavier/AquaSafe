@@ -31,7 +31,7 @@ export function TanksPanel({
       <div className="section-heading">
         <div>
           <span className="eyebrow">Depositos</span>
-          <h2>Monitoreo de cisternas</h2>
+          <h2>Monitoreo de tinacos</h2>
         </div>
         <button className="soft-button" type="button">
           Ver todos

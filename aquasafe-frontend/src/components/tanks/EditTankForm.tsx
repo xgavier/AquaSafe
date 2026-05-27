@@ -25,7 +25,7 @@ export function EditTankForm({
     <form className="edit-tank-form" onSubmit={onSubmit}>
       <div className="edit-form-heading">
         <div>
-          <span className="eyebrow">Editar cisterna</span>
+          <span className="eyebrow">Editar tinaco</span>
           <h3>{tank.identifier ?? `AQS-${tank.id}`}</h3>
         </div>
         <button className="soft-button" type="button" onClick={onCancel}>

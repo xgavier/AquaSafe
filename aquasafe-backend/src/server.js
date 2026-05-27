@@ -11,6 +11,7 @@ import {
   getTanks,
   updateTank,
   updateControl,
+  addTelemetryReading,
 } from './dashboardService.js'
 
 const app = express()
@@ -74,7 +75,7 @@ app.get('/api/tanks', async (_request, response, next) => {
   }
 })
 
-const toRequiredText = (value) => String(value ?? '').trim()
+const toRequiredText = (value) => String(value === undefined || value === null ? '' : value).trim()
 
 const toNumberOrDefault = (value, fallback) => {
   if (value === undefined || value === null || value === '') {
@@ -173,7 +174,7 @@ app.put('/api/tanks/:tankId', async (request, response, next) => {
     const tankId = toPositiveInteger(request.params.tankId)
 
     if (!tankId) {
-      response.status(400).json({ error: 'El identificador de la cisterna no es valido.' })
+      response.status(400).json({ error: 'El identificador del tinaco no es valido.' })
       return
     }
 
@@ -239,7 +240,7 @@ app.put('/api/tanks/:tankId', async (request, response, next) => {
     })
 
     if (!tank) {
-      response.status(404).json({ error: 'Cisterna no encontrada.' })
+      response.status(404).json({ error: 'Tinaco no encontrado.' })
       return
     }
 
@@ -254,7 +255,7 @@ app.delete('/api/tanks/:tankId', async (request, response, next) => {
     const tankId = toPositiveInteger(request.params.tankId)
 
     if (!tankId) {
-      response.status(400).json({ error: 'El identificador de la cisterna no es valido.' })
+      response.status(400).json({ error: 'El identificador del tinaco no es valido.' })
       return
     }
 
@@ -262,7 +263,7 @@ app.delete('/api/tanks/:tankId', async (request, response, next) => {
     const deleted = await deleteTank(pool, tankId)
 
     if (!deleted) {
-      response.status(404).json({ error: 'Cisterna no encontrada.' })
+      response.status(404).json({ error: 'Tinaco no encontrado.' })
       return
     }
 
@@ -314,6 +315,74 @@ app.patch('/api/controls/:controlKey', async (request, response, next) => {
     response.json(control)
   } catch (error) {
     next(error)
+  }
+})
+
+app.post('/api/telemetry', async (request, response, next) => {
+  try {
+    const { tankCode, waterLevelPercent, temperatureC, isLeak } = request.body
+
+    if (!tankCode) {
+      response.status(400).json({ error: 'El codigo del tinaco (tankCode) es obligatorio.' })
+      return
+    }
+
+    if (waterLevelPercent === undefined || temperatureC === undefined) {
+      response.status(400).json({ error: 'waterLevelPercent y temperatureC son obligatorios.' })
+      return
+    }
+
+    const pool = await getPool()
+    const result = await addTelemetryReading(pool, tankCode, {
+      waterLevelPercent: Number(waterLevelPercent),
+      temperatureC: Number(temperatureC),
+      isLeak: Boolean(isLeak),
+    })
+
+    if (!result || !result.success) {
+      response.status(404).json({ error: `Tinaco con codigo ${tankCode} no encontrado.` })
+      return
+    }
+
+    response.status(201).json({
+      success: true,
+      message: 'Telemetria registrada correctamente.',
+      tankId: result.tankId,
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/ai/recommendations', async (request, response, next) => {
+  try {
+    const aiUrl = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000'
+    const res = await fetch(`${aiUrl}/api/recommendations`)
+    if (!res.ok) {
+      throw new Error(`Servicio de IA retorno codigo de error ${res.status}`)
+    }
+    const data = await res.json()
+    response.json(data)
+  } catch (error) {
+    console.error('Error al consultar el servicio de IA:', error.message)
+    response.json({
+      recommendations: [
+        {
+          id: 'fb-1',
+          title: 'Sistema de IA en espera',
+          detail: 'El servicio de analisis inteligente en Python esta desconectado. Iniciando heuristica local.',
+          severity: 'warning',
+          icon: 'Brain'
+        },
+        {
+          id: 'fb-2',
+          title: 'Consumo optimo',
+          detail: 'No se detectan anomalias de flujo. Mantenga el control de la bomba activo.',
+          severity: 'ok',
+          icon: 'ShieldCheck'
+        }
+      ]
+    })
   }
 })
 

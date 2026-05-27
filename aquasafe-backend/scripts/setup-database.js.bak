@@ -1,4 +1,4 @@
-import sql from 'mssql/msnodesqlv8.js'
+import sql from 'mssql'
 import { appConfig, createSqlConfig } from '../src/config.js'
 
 const assertSafeDatabaseName = (name) => {

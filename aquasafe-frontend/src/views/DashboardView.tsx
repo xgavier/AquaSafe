@@ -6,6 +6,7 @@ import type {
   DashboardData,
   NewTankForm,
   Tank,
+  AiRecommendation,
 } from '../types/aquasafe'
 import { AlertsPanel } from '../components/dashboard/AlertsPanel'
 import { MetricGrid } from '../components/dashboard/MetricGrid'
@@ -14,6 +15,7 @@ import { TanksPanel } from '../components/dashboard/TanksPanel'
 import { UsageChart } from '../components/dashboard/UsageChart'
 import { ControlPanel } from '../components/control/ControlPanel'
 import { SettingsPanel } from '../components/settings/SettingsPanel'
+import { AiRecommendationsPanel } from '../components/dashboard/AiRecommendationsPanel'
 
 type DashboardViewProps = {
   apiStatus: ApiStatus
@@ -32,6 +34,10 @@ type DashboardViewProps = {
   onToggleControl: (id: ControlKey) => void
   onToggleTheme: () => void
   onUpdateTank: (event: FormEvent<HTMLFormElement>) => void
+  aiRecommendations: AiRecommendation[]
+  aiSource: string
+  aiDbSource: string
+  aiLoading: boolean
 }
 
 export function DashboardView({
@@ -49,36 +55,49 @@ export function DashboardView({
   onToggleControl,
   onToggleTheme,
   onUpdateTank,
+  aiRecommendations,
+  aiSource,
+  aiDbSource,
+  aiLoading,
 }: DashboardViewProps) {
   return (
     <>
       <OverviewBand apiStatus={apiStatus} overview={dashboardData.overview} />
       <MetricGrid metrics={dashboardData.metrics} />
 
-      <div className="content-grid">
-        <TanksPanel
-          editForm={editTankForm}
-          editStatus={editTankStatus}
-          editingTank={editingTank}
-          tanks={dashboardData.tanks}
-          onCancelEdit={onCancelEditTank}
-          onDeleteTank={onDeleteTank}
-          onEditChange={onEditTankChange}
-          onEditTank={onEditTank}
-          onUpdateTank={onUpdateTank}
-        />
-        <UsageChart hourlyUse={dashboardData.hourlyUse} />
-      </div>
+<div className="content-grid">
+  <TanksPanel
+    editForm={editTankForm}
+    editStatus={editTankStatus}
+    editingTank={editingTank}
+    tanks={dashboardData.tanks}
+    onCancelEdit={onCancelEditTank}
+    onDeleteTank={onDeleteTank}
+    onEditChange={onEditTankChange}
+    onEditTank={onEditTank}
+    onUpdateTank={onUpdateTank}
+  />
 
-      <div className="content-grid lower-grid">
-        <AlertsPanel alerts={dashboardData.alerts} />
-        <ControlPanel controlState={controlState} onToggleControl={onToggleControl} />
-        <SettingsPanel
-          isDarkTheme={isDarkTheme}
-          settings={dashboardData.settings}
-          onToggleTheme={onToggleTheme}
-        />
-      </div>
+  <UsageChart hourlyUse={dashboardData.hourlyUse} />
+</div>
+
+<div className="content-grid lower-grid">
+  <AlertsPanel alerts={dashboardData.alerts} />
+  <ControlPanel controlState={controlState} onToggleControl={onToggleControl} />
+  <SettingsPanel
+    isDarkTheme={isDarkTheme}
+    settings={dashboardData.settings}
+    onToggleTheme={onToggleTheme}
+  />
+</div>
+
+<AiRecommendationsPanel
+  recommendations={aiRecommendations}
+  source={aiSource}
+  dbSource={aiDbSource}
+  loading={aiLoading}
+/>
     </>
   )
 }
+

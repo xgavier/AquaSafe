@@ -96,3 +96,19 @@ export type AddTankStatus =
   | { type: 'error'; message: string }
 
 export type ApiStatus = 'loading' | 'online' | 'offline'
+
+export type AiRecommendation = {
+  id: string
+  title: string
+  detail: string
+  severity: 'critical' | 'warning' | 'ok'
+  icon: string
+}
+
+export type AiRecommendationsResponse = {
+  success: boolean
+  source: string
+  dbSource: string
+  recommendations: AiRecommendation[]
+}
+

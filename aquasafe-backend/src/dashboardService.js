@@ -282,7 +282,7 @@ export const createTank = async (pool, tankInput) => {
         N'bajo_nivel',
         N'critical',
         CONCAT(N'Nivel bajo: ', @name),
-        CONCAT(N'La cisterna ', @name, N' esta en ', FORMAT(@initialLevelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
+        CONCAT(N'El tinaco ', @name, N' esta en ', FORMAT(@initialLevelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
         N'open',
         SYSUTCDATETIME()
       );
@@ -377,8 +377,8 @@ export const updateTank = async (pool, tankId, tankInput) => {
 
         SET @AlertDetail = CASE
           WHEN @status = N'Revisar consumo'
-            THEN CONCAT(N'La cisterna ', @name, N' paso de Operativo a Revisar consumo. Revisa posible consumo anormal o fuga.')
-          ELSE CONCAT(N'La cisterna ', @name, N' paso de Operativo a Mantenimiento. Se requiere seguimiento operativo.')
+            THEN CONCAT(N'El tinaco ', @name, N' paso de Operativo a Revisar consumo. Revisa posible consumo anormal o fuga.')
+          ELSE CONCAT(N'El tinaco ', @name, N' paso de Operativo a Mantenimiento. Se requiere seguimiento operativo.')
         END;
 
         INSERT INTO dbo.Alerts (
@@ -424,7 +424,7 @@ export const updateTank = async (pool, tankId, tankInput) => {
           N'bajo_nivel',
           N'critical',
           CONCAT(N'Nivel bajo: ', @name),
-          CONCAT(N'La cisterna ', @name, N' esta en ', FORMAT(@levelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
+          CONCAT(N'El tinaco ', @name, N' esta en ', FORMAT(@levelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@minLevelPercent, N'0.##'), N'%.'),
           N'open',
           SYSUTCDATETIME()
         );
@@ -445,7 +445,7 @@ export const updateTank = async (pool, tankId, tankInput) => {
       SELECT CAST(1 AS bit) AS found;
     `)
 
-  if (!result.recordset[0]?.found) {
+  if (!result.recordset[0] || !result.recordset[0].found) {
     return null
   }
 
@@ -478,7 +478,7 @@ export const deleteTank = async (pool, tankId) => {
       SELECT CAST(1 AS bit) AS found;
     `)
 
-  return Boolean(result.recordset[0]?.found)
+  return Boolean(result.recordset[0] && result.recordset[0].found)
 }
 
 export const getAlerts = async (pool) => {
@@ -516,7 +516,7 @@ export const getControls = async (pool) => {
 
   return result.recordset.map((control) => ({
     ...control,
-    description: control.description ?? controlDescriptions[control.id],
+    description: control.description !== undefined && control.description !== null ? control.description : controlDescriptions[control.id],
     enabled: Boolean(control.enabled),
   }))
 }
@@ -559,7 +559,7 @@ export const getActiveSensorCount = async (pool) => {
       AND t.Status = N'Operativo';
   `)
 
-  return Number(result.recordset[0]?.activeSensors ?? 0)
+  return Number((result.recordset[0] && result.recordset[0].activeSensors !== undefined && result.recordset[0].activeSensors !== null) ? result.recordset[0].activeSensors : 0)
 }
 
 export const getDashboard = async (pool) => {
@@ -697,7 +697,7 @@ export const updateControl = async (pool, controlKey, enabled) => {
 
   const row = result.recordset[0]
 
-  if (!row?.found) {
+  if (!row || !row.found) {
     return null
   }
 
@@ -707,3 +707,163 @@ export const updateControl = async (pool, controlKey, enabled) => {
     found: undefined,
   }
 }
+
+export const addTelemetryReading = async (pool, tankCode, { waterLevelPercent, temperatureC, isLeak }) => {
+  const result = await pool
+    .request()
+    .input('tankCode', sql.NVarChar(30), tankCode)
+    .input('waterLevelPercent', sql.Decimal(5, 2), waterLevelPercent)
+    .input('temperatureC', sql.Decimal(5, 2), temperatureC)
+    .input('isLeak', sql.Bit, isLeak ? 1 : 0)
+    .query(`
+      SET XACT_ABORT ON;
+      BEGIN TRANSACTION;
+
+      DECLARE @TankId int;
+      DECLARE @Name nvarchar(80);
+      DECLARE @MinLevelPercent decimal(5,2);
+      DECLARE @MaxTemperatureC decimal(5,2);
+      DECLARE @Status nvarchar(40);
+
+      SELECT @TankId = TankId, 
+             @Name = Name, 
+             @MinLevelPercent = MinLevelPercent, 
+             @MaxTemperatureC = MaxTemperatureC,
+             @Status = Status
+      FROM dbo.Tanks
+      WHERE TankCode = @tankCode;
+
+      IF @TankId IS NULL
+      BEGIN
+        ROLLBACK TRANSACTION;
+        SELECT CAST(0 AS bit) AS success;
+        RETURN;
+      END;
+
+      -- Insert sensor reading
+      INSERT INTO dbo.SensorReadings (
+        TankId,
+        WaterLevelPercent,
+        TemperatureC,
+        FlowLitersPerMinute,
+        ConsumptionLiters,
+        RecordedAt
+      )
+      VALUES (
+        @TankId,
+        @waterLevelPercent,
+        @temperatureC,
+        0,
+        0,
+        SYSUTCDATETIME()
+      );
+
+      -- Update LastSeenAt for sensors
+      UPDATE dbo.Sensors
+      SET LastSeenAt = SYSUTCDATETIME()
+      WHERE TankId = @TankId;
+
+      -- 1. Check Low Level Alert
+      IF @waterLevelPercent < @MinLevelPercent
+        AND NOT EXISTS (
+          SELECT 1 FROM dbo.Alerts 
+          WHERE TankId = @TankId AND AlertType = N'bajo_nivel' AND Status = N'open'
+        )
+      BEGIN
+        INSERT INTO dbo.Alerts (TankId, AlertType, Severity, Title, Detail, Status, DetectedAt)
+        VALUES (
+          @TankId,
+          N'bajo_nivel',
+          N'critical',
+          CONCAT(N'Nivel bajo: ', @Name),
+          CONCAT(N'El tinaco ', @Name, N' esta en ', FORMAT(@waterLevelPercent, N'0.##'), N'%, por debajo del minimo configurado de ', FORMAT(@MinLevelPercent, N'0.##'), N'%.'),
+          N'open',
+          SYSUTCDATETIME()
+        );
+      END;
+
+      IF @waterLevelPercent >= @MinLevelPercent
+      BEGIN
+        UPDATE dbo.Alerts
+        SET Status = N'resolved', ResolvedAt = COALESCE(ResolvedAt, SYSUTCDATETIME())
+        WHERE TankId = @TankId AND AlertType = N'bajo_nivel' AND Status = N'open';
+      END;
+
+      -- 2. Check High Temperature Alert
+      IF @temperatureC > @MaxTemperatureC
+        AND NOT EXISTS (
+          SELECT 1 FROM dbo.Alerts 
+          WHERE TankId = @TankId AND AlertType = N'alta_temperatura' AND Status = N'open'
+        )
+      BEGIN
+        INSERT INTO dbo.Alerts (TankId, AlertType, Severity, Title, Detail, Status, DetectedAt)
+        VALUES (
+          @TankId,
+          N'alta_temperatura',
+          N'warning',
+          CONCAT(N'Temperatura alta: ', @Name),
+          CONCAT(N'El agua en ', @Name, N' esta a ', FORMAT(@temperatureC, N'0.##'), N' C, superando el maximo configurado de ', FORMAT(@MaxTemperatureC, N'0.##'), N' C.'),
+          N'open',
+          SYSUTCDATETIME()
+        );
+      END;
+
+      IF @temperatureC <= @MaxTemperatureC
+      BEGIN
+        UPDATE dbo.Alerts
+        SET Status = N'resolved', ResolvedAt = COALESCE(ResolvedAt, SYSUTCDATETIME())
+        WHERE TankId = @TankId AND AlertType = N'alta_temperatura' AND Status = N'open';
+      END;
+
+      -- 3. Check Leak Alert (Fuga)
+      IF @isLeak = 1
+      BEGIN
+        -- Actualizar estado del tanque
+        UPDATE dbo.Tanks SET Status = N'Revisar consumo', UpdatedAt = SYSUTCDATETIME() WHERE TankId = @TankId;
+
+        -- Crear alerta de fuga si no existe abierta
+        IF NOT EXISTS (
+          SELECT 1 FROM dbo.Alerts 
+          WHERE TankId = @TankId AND AlertType = N'fuga_detectada' AND Status = N'open'
+        )
+        BEGIN
+          INSERT INTO dbo.Alerts (TankId, AlertType, Severity, Title, Detail, Status, DetectedAt)
+          VALUES (
+            @TankId,
+            N'fuga_detectada',
+            N'critical',
+            CONCAT(N'Fuga detectada: ', @Name),
+            CONCAT(N'Se ha confirmado un patron de fuga en el tinaco ', @Name, N'. El buzzer y alarmas han sido activados.'),
+            N'open',
+            SYSUTCDATETIME()
+          );
+        END;
+
+        -- Encender alarma sonora en controles si esta apagada
+        UPDATE dbo.DeviceControls
+        SET IsEnabled = 1, UpdatedAt = SYSUTCDATETIME()
+        WHERE ControlKey = N'alarm' AND IsEnabled = 0;
+      END;
+      ELSE
+      BEGIN
+        -- Si ya no hay fuga, y el estado era 'Revisar consumo' y no hay otras alertas criticas abiertas, podemos restablecerlo a 'Operativo'
+        IF @Status = N'Revisar consumo' AND NOT EXISTS (
+          SELECT 1 FROM dbo.Alerts WHERE TankId = @TankId AND Status = N'open' AND Severity = N'critical' AND AlertType != N'fuga_detectada'
+        )
+        BEGIN
+          UPDATE dbo.Tanks SET Status = N'Operativo', UpdatedAt = SYSUTCDATETIME() WHERE TankId = @TankId;
+        END;
+
+        -- Resolver alerta de fuga si estaba abierta
+        UPDATE dbo.Alerts
+        SET Status = N'resolved', ResolvedAt = COALESCE(ResolvedAt, SYSUTCDATETIME())
+        WHERE TankId = @TankId AND AlertType = N'fuga_detectada' AND Status = N'open';
+      END;
+
+      COMMIT TRANSACTION;
+      SELECT CAST(1 AS bit) AS success, @TankId AS tankId;
+    `)
+
+  return result.recordset[0]
+}
+

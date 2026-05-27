@@ -1,4 +1,4 @@
-import sql from 'mssql'
+import sql from 'mssql/msnodesqlv8.js'
 import { createSqlConfig } from './config.js'
 
 let poolPromise

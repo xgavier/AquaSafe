@@ -17,13 +17,13 @@ export function TankFormFields({
   return (
     <>
       <label>
-        <span>Nombre de la cisterna</span>
+        <span>Nombre del tinaco</span>
         <input
           name="name"
           type="text"
           value={form.name}
           onChange={onChange}
-          placeholder={showPlaceholders ? 'Ej. Cisterna comedor' : undefined}
+          placeholder={showPlaceholders ? 'Ej. Tinaco comedor' : undefined}
           maxLength={80}
           required
         />

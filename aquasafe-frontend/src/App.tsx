@@ -22,6 +22,8 @@ import type {
   DashboardData,
   NewTankForm,
   Tank,
+  AiRecommendation,
+  AiRecommendationsResponse,
 } from './types/aquasafe'
 import { getAlertMarker } from './utils/alerts'
 import { parseCapacityLiters } from './utils/formatters'
@@ -57,6 +59,10 @@ function App() {
     alarm: false,
   })
   const [isDarkTheme, setIsDarkTheme] = useState(getStoredDarkTheme)
+  const [aiRecommendations, setAiRecommendations] = useState<AiRecommendation[]>([])
+  const [aiSource, setAiSource] = useState('')
+  const [aiDbSource, setAiDbSource] = useState('')
+  const [aiLoading, setAiLoading] = useState(true)
 
   const loadDashboard = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -133,25 +139,65 @@ function App() {
     [notificationsOpen],
   )
 
+  const loadAiRecommendations = useCallback(async (signal?: AbortSignal) => {
+    try {
+      setAiLoading(true)
+      const response = await fetch(`${API_BASE_URL}/ai/recommendations`, { signal })
+
+      if (!response.ok) {
+        throw new Error('No se pudieron cargar las recomendaciones de IA.')
+      }
+
+      const data = (await response.json()) as AiRecommendationsResponse
+      setAiRecommendations(data.recommendations ?? [])
+      setAiSource(data.source ?? 'Local Engine')
+      setAiDbSource(data.dbSource ?? 'SQL Server')
+    } catch (error) {
+      console.error('Error loading AI recommendations:', error)
+      setAiRecommendations([
+        {
+          id: 'fb-1',
+          title: 'Sistema de IA en espera',
+          detail: 'El servicio de analisis inteligente en Python esta desconectado. Iniciando heuristica local.',
+          severity: 'warning',
+          icon: 'Brain'
+        },
+        {
+          id: 'fb-2',
+          title: 'Consumo optimo',
+          detail: 'No se detectan anomalias de flujo. Mantenga el control de la bomba activo.',
+          severity: 'ok',
+          icon: 'ShieldCheck'
+        }
+      ])
+      setAiSource('Heuristica Local (Fallback)')
+      setAiDbSource('Fallback Interno')
+    } finally {
+      setAiLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     const controller = new AbortController()
     void Promise.resolve().then(() =>
       Promise.all([
         loadDashboard(controller.signal),
         loadAlerts(controller.signal),
+        loadAiRecommendations(controller.signal),
       ]),
     )
 
     const refreshInterval = window.setInterval(() => {
       void loadDashboard()
       void loadAlerts()
+      void loadAiRecommendations()
     }, 30000)
 
     return () => {
       controller.abort()
       window.clearInterval(refreshInterval)
     }
-  }, [loadDashboard, loadAlerts])
+  }, [loadDashboard, loadAlerts, loadAiRecommendations])
 
   useEffect(() => {
     document.documentElement.dataset.theme = isDarkTheme ? 'dark' : 'light'
@@ -245,13 +291,14 @@ function App() {
   const refreshDashboardAndAlerts = async () => {
     await loadDashboard()
     await loadAlerts()
+    await loadAiRecommendations()
   }
 
   const handleAddTank = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setAddTankStatus({
       type: 'saving',
-      message: 'Guardando cisterna en SQL Server...',
+      message: 'Guardando tinaco en SQL Server...',
     })
 
     try {
@@ -279,7 +326,7 @@ function App() {
         throw new Error(
           errorBody?.errors?.join(' ') ??
             errorBody?.error ??
-            'No se pudo crear la cisterna.',
+            'No se pudo crear el tinaco.',
         )
       }
 
@@ -287,7 +334,7 @@ function App() {
       setTankForm(initialTankForm)
       setAddTankStatus({
         type: 'success',
-        message: 'Cisterna agregada correctamente.',
+        message: 'Tinaco agregado correctamente.',
       })
       setActiveSection('tinacos')
       window.requestAnimationFrame(() => {
@@ -303,7 +350,7 @@ function App() {
         message:
           error instanceof Error
             ? error.message
-            : 'No se pudo crear la cisterna.',
+            : 'No se pudo crear el tinaco.',
       })
     }
   }
@@ -314,14 +361,14 @@ function App() {
     if (!editingTank?.id) {
       setEditTankStatus({
         type: 'error',
-        message: 'No se encontro la cisterna seleccionada.',
+        message: 'No se encontro el tinaco seleccionado.',
       })
       return
     }
 
     setEditTankStatus({
       type: 'saving',
-      message: 'Actualizando cisterna en SQL Server...',
+      message: 'Actualizando tinaco en SQL Server...',
     })
 
     try {
@@ -349,14 +396,14 @@ function App() {
         throw new Error(
           errorBody?.errors?.join(' ') ??
             errorBody?.error ??
-            'No se pudo actualizar la cisterna.',
+            'No se pudo actualizar el tinaco.',
         )
       }
 
       await refreshDashboardAndAlerts()
       setEditTankStatus({
         type: 'success',
-        message: 'Cisterna actualizada correctamente.',
+        message: 'Tinaco actualizado correctamente.',
       })
       closeEditTank()
     } catch (error) {
@@ -366,7 +413,7 @@ function App() {
         message:
           error instanceof Error
             ? error.message
-            : 'No se pudo actualizar la cisterna.',
+            : 'No se pudo actualizar el tinaco.',
       })
     }
   }
@@ -377,7 +424,7 @@ function App() {
     }
 
     const shouldDelete = window.confirm(
-      `Quieres eliminar la cisterna "${tank.name}"? Esta accion tambien eliminara sus lecturas y sensores asociados.`,
+      `Quieres eliminar el tinaco "${tank.name}"? Esta accion tambien eliminara sus lecturas y sensores asociados.`,
     )
 
     if (!shouldDelete) {
@@ -393,7 +440,7 @@ function App() {
         const errorBody = (await response.json().catch(() => null)) as
           | { error?: string }
           | null
-        throw new Error(errorBody?.error ?? 'No se pudo eliminar la cisterna.')
+        throw new Error(errorBody?.error ?? 'No se pudo eliminar el tinaco.')
       }
 
       if (editingTank?.id === tank.id) {
@@ -407,7 +454,7 @@ function App() {
       setEditTankStatus({
         type: 'error',
         message:
-          error instanceof Error ? error.message : 'No se pudo eliminar la cisterna.',
+          error instanceof Error ? error.message : 'No se pudo eliminar el tinaco.',
       })
     }
   }
@@ -497,6 +544,10 @@ function App() {
             onToggleControl={toggleControl}
             onToggleTheme={() => setIsDarkTheme((current) => !current)}
             onUpdateTank={handleUpdateTank}
+            aiRecommendations={aiRecommendations}
+            aiSource={aiSource}
+            aiDbSource={aiDbSource}
+            aiLoading={aiLoading}
           />
         )}
       </main>
